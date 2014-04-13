@@ -22,14 +22,17 @@ import javax.swing.JMenuItem;
 
 
 public class GUIMain extends JFrame{
-	private ImgPanel mapPanel;
+	private MapPanel mapPanel;
 	private JButton addConnection;
+	private JButton removeConnection;
+	private JButton findPath;
 	private EventHandler eventHandler;
 	public GUIMain(EventHandler eventHandler){
 		super("PathView");
 		this.eventHandler = eventHandler;
 		setLayout(new BorderLayout());
 		setSize(600, 600);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setVisible(true);
 		Container content = getContentPane();
 		
@@ -50,21 +53,25 @@ public class GUIMain extends JFrame{
 		file.add(load);
 		file.add(importImg);
 		
-		JButton findPath = new JButton("Find Path");
+		findPath = new JButton("Find Path");
 		JButton addLocation = new JButton("Add Location");
 		addConnection = new JButton ("Add Connection");
+		removeConnection = new JButton("Remove Connection");
 		addConnection.setEnabled(false);
+		removeConnection.setEnabled(false);
+		findPath.setEnabled(false);
 		Container buttonContainer = new Container();
 		buttonContainer.setLayout(new FlowLayout());
 		buttonContainer.add(addLocation);
 		buttonContainer.add(addConnection);
+		buttonContainer.add(removeConnection);
 		buttonContainer.add(findPath);
 		
 		topContainer.add(menu);
 		topContainer.add(buttonContainer);
 		
 		//Center container
-		mapPanel = new ImgPanel(eventHandler);
+		mapPanel = new MapPanel(eventHandler);
 		
 		//Add to final container
 		content.add(mapPanel, BorderLayout.CENTER);
@@ -73,43 +80,58 @@ public class GUIMain extends JFrame{
 		importImg.addActionListener(new ImportImageListener());
 		addLocation.addActionListener(new AddLocationListener());
 		addConnection.addActionListener(new AddConnectionListener());
+		removeConnection.addActionListener(new RemoveConnectionListener());
 		mapPanel.addMouseListener(new picListener());
 		findPath.addActionListener(new PathListener());
 		save.addActionListener(new SaveListener());
 		load.addActionListener(new LoadListener());
 	}
-	public class PathListener implements ActionListener{
+	private void updateButtons(){
+		addConnection.setEnabled(eventHandler.validSelection());
+		removeConnection.setEnabled(eventHandler.validSelection());
+		findPath.setEnabled(eventHandler.validSelection());
+	}
+	private class PathListener implements ActionListener{
 		public void actionPerformed(ActionEvent e){
 			eventHandler.validPath();
+			updateButtons();
 			repaint();
 		}
 	}
 	//Listener for map
-	public class picListener extends MouseAdapter{
+	private class picListener extends MouseAdapter{
 		public void mousePressed(MouseEvent e) {
 			eventHandler.clickRegistered(e);
-			addConnection.setEnabled(eventHandler.validSelection());
+			updateButtons();
 			repaint();
 		}	
 	}
-	public class AddLocationListener implements ActionListener{
+	private class AddLocationListener implements ActionListener{
 		public void actionPerformed(ActionEvent e){
 			eventHandler.setPaintActive(true);
+			updateButtons();
 		}
 	}
-	public class ImportImageListener implements ActionListener{
+	private class ImportImageListener implements ActionListener{
 		public void actionPerformed(ActionEvent e){
 			importImg(null);
 		}
 	}
-	public class AddConnectionListener implements ActionListener{
+	private class AddConnectionListener implements ActionListener{
 		public void actionPerformed(ActionEvent e){
 			eventHandler.connectNodes();
-			addConnection.setEnabled(eventHandler.validSelection());
+			updateButtons();
 			repaint();
 		}
 	}
-	public class SaveListener implements ActionListener{
+	private class RemoveConnectionListener implements ActionListener{
+		public void actionPerformed(ActionEvent e){
+			eventHandler.disconnect();
+			updateButtons();
+			repaint();
+		}
+	}
+	private class SaveListener implements ActionListener{
 		public void actionPerformed(ActionEvent e){
 			try {
                 FileDialog file = new FileDialog(new JFrame(), "Save", FileDialog.SAVE);
@@ -123,7 +145,7 @@ public class GUIMain extends JFrame{
 			}
 		}
 	}
-	public class LoadListener implements ActionListener{
+	private class LoadListener implements ActionListener{
 		public void actionPerformed(ActionEvent e){
 			try {
 				FileDialog file = new FileDialog(new JFrame(), "Choose Map", FileDialog.LOAD);
@@ -141,19 +163,19 @@ public class GUIMain extends JFrame{
 			}
 		}
 	}
-	public void importImg(String path){
-			if(path == null){
-				FileDialog file = new FileDialog(this, "Choose Map", FileDialog.LOAD);
-				file.setDirectory("C:\\devel\\PathView");
-				file.setFile("*.jpg");
-				file.setVisible(true);
-				path = file.getFile();
-			}
-			if(path != null){
-				Dimension dim = mapPanel.setImage(new File(path));
-				dim.setSize(dim.getWidth()+15, dim.getHeight()+110);
-				setSize(dim);
-			}
+	private void importImg(String path){
+		if(path == null){
+			FileDialog file = new FileDialog(this, "Choose Map", FileDialog.LOAD);
+			file.setDirectory("C:\\devel\\PathView");
+			file.setFile("*.jpg");
+			file.setVisible(true);
+			path = file.getFile();
+		}
+		if(path != null){
+			Dimension dim = mapPanel.setImage(new File(path));
+			dim.setSize(dim.getWidth()+15, dim.getHeight()+110);
+			setSize(dim);
+		}
 	}
 }
 

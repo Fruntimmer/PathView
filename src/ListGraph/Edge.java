@@ -1,16 +1,16 @@
 package ListGraph;
 
-public class Edge {
-	private Node dest;
+public class Edge<T> {
+	private T dest;
 	private Integer weight;
-	public Edge(Node dest, Integer weight){
+	public Edge(T dest, Integer weight){
 		this.dest = dest;
 		this.weight = weight;
 	}
 	public String toString(){
 		return "goes to "+dest;
 	}
-	public Node getDest(){
+	public T getDest(){
 		return dest;
 	}
 	public Integer getWeight(){

@@ -18,22 +18,21 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 import ListGraph.Edge;
+import ListGraph.Graph;
+import ListGraph.GraphMethods;
 import ListGraph.ListGraph;
-import ListGraph.Node;
-import ListGraph.Sprite;
 
 public class EventHandler {
 	private ArrayList<Node> selection = new ArrayList<>();
 	private ArrayList<Node> foundPath = new ArrayList<>();
-	private ListGraph graph;
+	private Graph<Node> graph;
 	private boolean paintActive = false;
 	public EventHandler(){
-		graph = new ListGraph();
+		graph = new ListGraph<Node>();
 	}
 	public void clickRegistered(MouseEvent e){
 		Node n = spriteDetection(e.getX(), e.getY());
 		if(n != null){
-			System.out.println("Hit!");
 			select(n);
 		}
 		else if(paintActive){
@@ -50,11 +49,12 @@ public class EventHandler {
 		CityGUI gui = new CityGUI();
 		int choice = JOptionPane.showConfirmDialog(null, gui, "Create City", JOptionPane.OK_CANCEL_OPTION);
 		if(choice == JOptionPane.OK_OPTION){			
-			graph.add(new CityNode(gui.getName(),x, y));
+			graph.add(new Node(gui.getName(),x, y));
 		}
+		clearSelection();
 	}
 	public void connectNodes(){		
-		if(selection.size() == 2){
+		if(validSelection()){
 			ConnectGUI gui = new ConnectGUI();
 			int choice = JOptionPane.showConfirmDialog(null, gui, "Create Connection", JOptionPane.OK_CANCEL_OPTION);
 			if(choice == JOptionPane.OK_OPTION){
@@ -63,10 +63,15 @@ public class EventHandler {
 			}
 		}		
 	}
+	public void disconnect(){
+		if(validSelection()){
+			graph.disconnect(selection.get(0), selection.get(1));
+			clearSelection();
+		}
+	}
 	public void validPath(){
-		foundPath = graph.dijsktraFind(selection.get(0), selection.get(1));
-		
-		//return graph.pathExists(selection.get(0), selection.get(1));
+		foundPath = GraphMethods.dijsktraFind(selection.get(0), selection.get(1), graph);
+		clearSelection();
 	}
 	public boolean isInPath(Node n){
 		return foundPath.contains(n);
@@ -74,7 +79,7 @@ public class EventHandler {
 	public ArrayList<Node> getNodes(){
 		return graph.getNodes();
 	}
-	public ArrayList<Edge> getConnections(Node n){
+	public ArrayList<Edge<Node>> getConnections(Node n){
 		return graph.getEdges(n);
 	}
 	public void select(Node n){
@@ -114,10 +119,17 @@ public class EventHandler {
 		//Adding a pixel bias so you can click a little outside but it will still register as a hit
 		int bias = 6;
 		for (Node n : graph.getNodes()){
-			Sprite s = ((CityNode)n).getSprite();
+			Sprite s = n.getSprite();
 			if((x > s.getX()-(w/2+bias) && x < s.getX()+(w/2+bias)) && y>s.getY()-(h/2 +bias) && y<s.getY()+(h/2+bias)){
 				return n;
 			}
+		}
+		return null;
+	}
+	private Node findNodeById(int id){
+		for(Node n : graph.getNodes()){
+			if(n.getId() == id)
+				return n;
 		}
 		return null;
 	}
@@ -130,13 +142,13 @@ public class EventHandler {
 			}
 		});
 		for(Node n : allNodes){
-			Sprite s = ((CityNode)n).getSprite();
+			Sprite s = n.getSprite();
 			pw.write(n +" "+s.getX()+ " "+s.getY()+"\n");
 		}
 		pw.write("|-edges-| \n");
 		for(Node n : allNodes){	
-			for(Edge e : graph.getEdges(n)){
-				pw.write(n.getId() +" " + e.getDest().getId() + " " +e.getWeight() + " ");
+			for(Edge<Node> e : graph.getEdges(n)){
+				pw.write(n.getId() +" " + ((Node)e.getDest()).getId() + " " +e.getWeight() + " ");
 				pw.write("\n");
 			}
 		}
@@ -160,7 +172,7 @@ public class EventHandler {
 				System.out.println(in.nextLine());
 			}
 			else{
-				graph.add(new CityNode(next,in.nextInt(),in.nextInt()));
+				graph.add(new Node(next,in.nextInt(),in.nextInt()));
 			}
 		}
 		while(in.hasNextLine()){
@@ -177,13 +189,6 @@ public class EventHandler {
 		if(path.equals("void"))
 			return null;
 		return path;
-	}
-	private Node findNodeById(int id){
-		for(Node n : graph.getNodes()){
-			if(n.getId() == id)
-				return n;
-		}
-		return null;
 	}
 	private class CityGUI extends JPanel{
 		private JTextField name;
